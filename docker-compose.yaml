@@ -1,0 +1,41 @@
+services:
+  kafka:
+    image: "quay.io/ogunalp/kafka-native:0.9.0-kafka-3.7.0"
+    ports:
+      - "9092:9092"
+  kafka-populator:
+    build: ./kafka-populator
+    depends_on:
+      - kafka
+  jobmanager:
+    build: ./custom-flink
+    depends_on:
+      - kafka-populator
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager        
+  taskmanager:
+    build: ./custom-flink
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2        
+  sql-client:
+    build: ./custom-flink
+    command: bin/sql-client.sh
+    depends_on:
+      - taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        rest.address: jobmanager  
