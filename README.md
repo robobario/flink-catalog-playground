@@ -3,6 +3,17 @@
 Then in the flink client
 
 ```
+CREATE CATALOG custom WITH ('type'='kafka-rob');
+```
+then
+
+```
+USE CATALOG custom;
+```
+
+then
+
+```
 CREATE TABLE KafkaTable (
   `name` STRING,
   `id` BIGINT
