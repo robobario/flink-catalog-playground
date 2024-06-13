@@ -1,5 +1,7 @@
 package com.github.robobario;
 
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -7,7 +9,12 @@ import org.apache.flink.table.catalog.CatalogDatabase;
 import org.apache.flink.table.catalog.CatalogFunction;
 import org.apache.flink.table.catalog.CatalogPartition;
 import org.apache.flink.table.catalog.CatalogPartitionSpec;
+import org.apache.flink.table.catalog.CatalogTable;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.catalog.DefaultCatalogTable;
 import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.ResolvedCatalogTable;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotEmptyException;
@@ -30,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class KafkaCatalog extends AbstractCatalog {
 
@@ -106,11 +114,27 @@ public class KafkaCatalog extends AbstractCatalog {
     @Override
     public CatalogBaseTable getTable(ObjectPath objectPath) throws TableNotExistException, CatalogException {
         LOG.info("get table {}", objectPath);
-        return delegate.getTable(objectPath);
+        if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
+            LOG.info("returning the olde custom table!");
+            return new ResolvedCatalogTable(CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+                    "properties.bootstrap.servers", "kafka:9092",
+                    "connector", "kafka",
+                    "format", "csv",
+                    "topic", "mytopic",
+                    "scan.startup.mode", "earliest-offset",
+                    "properties.group.id", "testGroup"
+            )), ResolvedSchema.of(List.of(Column.physical("name", DataTypes.STRING()), Column.physical("id", DataTypes.INT()))));
+        }
+        CatalogBaseTable table = delegate.getTable(objectPath);
+        LOG.info("get table result: {}, {}", objectPath, table);
+        return table;
     }
 
     @Override
     public boolean tableExists(ObjectPath objectPath) throws CatalogException {
+        if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
+            return true;
+        }
         LOG.info("table exists: {}", objectPath);
         return delegate.tableExists(objectPath);
     }
