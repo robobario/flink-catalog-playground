@@ -29,11 +29,24 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2        
+  sqlgateway:
+    build: ./custom-flink
+    depends_on:
+      - jobmanager
+    command: /opt/flink/bin/sql-gateway.sh start-foreground -Dsql-gateway.endpoint.rest.address=0.0.0.0
+    scale: 1
+    ports:
+      - "8083:8083"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
   sql-client:
     build: ./custom-flink
     command: bin/sql-client.sh
     depends_on:
       - taskmanager
+      - sqlgateway
     environment:
       - |
         FLINK_PROPERTIES=
