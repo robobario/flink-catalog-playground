@@ -36,8 +36,10 @@ import org.apache.flink.table.factories.FactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class KafkaCatalog extends AbstractCatalog {
 
@@ -116,16 +118,32 @@ public class KafkaCatalog extends AbstractCatalog {
         LOG.info("get table {}", objectPath);
         if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
             LOG.info("returning the olde custom table!");
-            return new ResolvedCatalogTable(CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+            return CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
                     "properties.bootstrap.servers", "kafka:9092",
                     "connector", "kafka",
                     "format", "csv",
                     "topic", "mytopic",
                     "scan.startup.mode", "earliest-offset",
                     "properties.group.id", "testGroup"
-            )), ResolvedSchema.of(List.of(Column.physical("name", DataTypes.STRING()), Column.physical("id", DataTypes.INT()))));
+            ));
         }
         CatalogBaseTable table = delegate.getTable(objectPath);
+        if (table.getOptions().containsKey("properties.bootstrap.cluster")) {
+            String cluster = table.getOptions().get("properties.bootstrap.cluster");
+            String bootstrap;
+            if(cluster.equals("my-kafka")) {
+                bootstrap = "kafka:9092";
+            } else {
+                throw new RuntimeException("unknown kafka cluster: " + cluster);
+            }
+            if(table instanceof CatalogTable t) {
+                HashMap<String, String> options = new HashMap<>(t.getOptions());
+                options.put("properties.bootstrap.servers", bootstrap);
+                return CatalogTable.of(t.getUnresolvedSchema(), t.getComment(), t.getPartitionKeys(), options);
+            } else {
+                throw new RuntimeException("table isn't a CatalogTable");
+            }
+        }
         LOG.info("get table result: {}, {}", objectPath, table);
         return table;
     }
