@@ -41,3 +41,11 @@ and you should see:
                            name                   id
                      helloworld                    1
 ```
+
+## SQL Gateway
+
+To query via the SQL Gateway:
+
+```
+./query.py "SELECT * FROM KafkaTable;"
+```

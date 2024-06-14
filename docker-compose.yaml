@@ -33,7 +33,7 @@ services:
     build: ./custom-flink
     depends_on:
       - jobmanager
-    command: /opt/flink/bin/sql-gateway.sh start-foreground -Dsql-gateway.endpoint.rest.address=0.0.0.0
+    command: /opt/flink/bin/sql-gateway.sh start-foreground
     scale: 1
     ports:
       - "8083:8083"
@@ -41,6 +41,9 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
+        table.catalog-store.kind: kafka-store-rob
+        sql-gateway.endpoint.rest.address=0.0.0.0
+        rest.address: jobmanager
   sql-client:
     build: ./custom-flink
     command: bin/sql-client.sh
