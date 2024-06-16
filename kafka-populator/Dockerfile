@@ -1,4 +1,5 @@
 FROM edenhill/kcat:1.7.1
-COPY populate.sh /
-CMD ["/populate.sh"]
-ENTRYPOINT ["/bin/sh"]
+RUN apk add netcat-openbsd
+COPY populate.sh /populate.sh
+COPY entry.sh /entry.sh
+ENTRYPOINT ["/entry.sh"]
