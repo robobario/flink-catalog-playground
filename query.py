@@ -5,7 +5,8 @@ import sys
 import time
 from urllib.error import HTTPError
 
-gateway="http://localhost:8083"
+port=sys.argv[1]
+gateway=f'http://localhost:{port}'
 
 def send(endpoint, data):
   data = json.dumps(data).encode('utf-8')
@@ -31,7 +32,7 @@ sessionHandle = response["sessionHandle"]
 describe_session=get(f'/sessions/{sessionHandle}')
 print(describe_session)
 
-query={"statement": sys.argv[1]}
+query={"statement": sys.argv[2]}
 response = send(f'/sessions/{sessionHandle}/statements', query)
 operationHandle = response["operationHandle"]
 

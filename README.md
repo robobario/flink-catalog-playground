@@ -44,8 +44,18 @@ and you should see:
 
 ## SQL Gateway
 
-To query via the SQL Gateway:
+To query via the SQL Gateway (from Erin's gateway):
 
 ```
-./query.py "SELECT * FROM KafkaTable;"
+./query.py 8083 "SELECT * FROM KafkaTable;"
+./query.py 8083 "SELECT * FROM ErinTable;" # succeeds
+./query.py 8083 "SELECT * FROM EricTable;" # fails
+```
+
+To query via the SQL Gateway (from Eric's gateway):
+
+```
+./query.py 8084 "SELECT * FROM KafkaTable;"
+./query.py 8084 "SELECT * FROM ErinTable;" # fails
+./query.py 8084 "SELECT * FROM EricTable;" # succeeds
 ```

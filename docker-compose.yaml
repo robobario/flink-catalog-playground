@@ -29,7 +29,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2        
-  sqlgateway:
+  erin-sqlgateway:
     build: ./custom-flink
     depends_on:
       - jobmanager
@@ -44,15 +44,34 @@ services:
         table.catalog-store.kind: kafka-store-rob
         sql-gateway.endpoint.rest.address=0.0.0.0
         rest.address: jobmanager
+        catalog.user: erin
+  eric-sqlgateway:
+    build: ./custom-flink
+    depends_on:
+      - jobmanager
+    command: /opt/flink/bin/sql-gateway.sh start-foreground
+    scale: 1
+    ports:
+      - "8084:8083"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        table.catalog-store.kind: kafka-store-rob
+        sql-gateway.endpoint.rest.address=0.0.0.0
+        rest.address: jobmanager
+        catalog.user: eric
   sql-client:
     build: ./custom-flink
     command: bin/sql-client.sh
     depends_on:
       - taskmanager
-      - sqlgateway
+      - eric-sqlgateway
+      - erin-sqlgateway
     environment:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         rest.address: jobmanager
         table.catalog-store.kind: kafka-store-rob
+        catalog.user: samwise

@@ -11,15 +11,18 @@ import org.apache.flink.table.factories.FactoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 public class KafkaCatalogStore extends AbstractCatalogStore {
     private static Logger LOG = LoggerFactory.getLogger(KafkaCatalogStore.class);
+    private final String user;
 
     CatalogStore delegate;
 
-    public KafkaCatalogStore() {
+    public KafkaCatalogStore(String user) {
+        this.user = Objects.requireNonNull(user);
         delegate = FactoryUtil.discoverFactory(Thread.currentThread().getContextClassLoader(), CatalogStoreFactory.class, "generic_in_memory").createCatalogStore();
     }
 
@@ -56,6 +59,7 @@ public class KafkaCatalogStore extends AbstractCatalogStore {
         delegate.open();
         Configuration configuration = new Configuration();
         configuration.set(CommonCatalogOptions.CATALOG_TYPE, "kafka-rob");
+        configuration.set(KafkaCatalogFactory.CATALOG_USER, user);
         delegate.storeCatalog("default_catalog", CatalogDescriptor.of("default_catalog", configuration));
     }
 

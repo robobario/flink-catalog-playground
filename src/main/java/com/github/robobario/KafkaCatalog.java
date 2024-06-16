@@ -39,18 +39,61 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
 public class KafkaCatalog extends AbstractCatalog {
 
     private static Logger LOG = LoggerFactory.getLogger(KafkaCatalog.class);
+
+    private static Map<String, Set<String>> userPermittedTables = Map.of("erin", Set.of("KafkaTable", "ErinTable"), "eric", Set.of("EricTable"), "samwise", Set.of("KafkaTable", "SamwiseTable", "KafkaTable2"));
+    private final String user;
+
+    private static Map<String, CatalogTable> tables = Map.of(
+            "KafkaTable",CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+                    "properties.bootstrap.servers", "kafka:9092",
+                    "connector", "kafka",
+                    "format", "csv",
+                    "topic", "mytopic",
+                    "scan.startup.mode", "earliest-offset",
+                    "properties.group.id", "testGroup"
+            )),
+            "ErinTable", CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+                    "properties.bootstrap.servers", "kafka:9092",
+                    "connector", "kafka",
+                    "format", "csv",
+                    "topic", "erintopic",
+                    "scan.startup.mode", "earliest-offset",
+                    "properties.group.id", "testGroup"
+            )),
+            "EricTable", CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+                    "properties.bootstrap.servers", "kafka:9092",
+                    "connector", "kafka",
+                    "format", "csv",
+                    "topic", "erictopic",
+                    "scan.startup.mode", "earliest-offset",
+                    "properties.group.id", "testGroup"
+            )),
+            "SamwiseTable", CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
+                    "properties.bootstrap.servers", "kafka:9092",
+                    "connector", "kafka",
+                    "format", "csv",
+                    "topic", "samwisetopic",
+                    "scan.startup.mode", "earliest-offset",
+                    "properties.group.id", "testGroup"
+            ))
+    );
 
     private Catalog delegate;
 
     public KafkaCatalog(CatalogFactory.Context context) {
         super(context.getName(), "default");
         delegate = FactoryUtil.discoverFactory(context.getClassLoader(), CatalogFactory.class, "generic_in_memory")
-                .createCatalog(context);
+                // cannot pass through the context as it contains configuration specific to KafkaCatalog, the in memory catalog rejects it.
+                .createCatalog(new FactoryUtil.DefaultCatalogContext(context.getName(), Map.of(), context.getConfiguration(), context.getClassLoader()));
+        user = Objects.requireNonNull(context.getOptions().get(KafkaCatalogFactory.CATALOG_USER.key()));
     }
 
     @Override
@@ -104,7 +147,9 @@ public class KafkaCatalog extends AbstractCatalog {
     @Override
     public List<String> listTables(String s) throws DatabaseNotExistException, CatalogException {
         LOG.info("list tables {}", s);
-        return delegate.listTables(s);
+        List<String> allTables = delegate.listTables(s);
+        Stream<String> stream = Stream.concat(allTables.stream(), tables.keySet().stream());
+        return stream.filter(table -> userPermittedTables.get(user).contains(table)).toList();
     }
 
     @Override
@@ -115,17 +160,13 @@ public class KafkaCatalog extends AbstractCatalog {
 
     @Override
     public CatalogBaseTable getTable(ObjectPath objectPath) throws TableNotExistException, CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to get table metadata for " + objectPath);
+        }
         LOG.info("get table {}", objectPath);
-        if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
+        if (objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
             LOG.info("returning the olde custom table!");
-            return CatalogTable.of(Schema.newBuilder().column("name", DataTypes.STRING()).column("id", DataTypes.INT()).build(), null, List.of(), Map.of(
-                    "properties.bootstrap.servers", "kafka:9092",
-                    "connector", "kafka",
-                    "format", "csv",
-                    "topic", "mytopic",
-                    "scan.startup.mode", "earliest-offset",
-                    "properties.group.id", "testGroup"
-            ));
+            return tables.get(objectPath.getObjectName());
         }
         CatalogBaseTable table = delegate.getTable(objectPath);
         if (table.getOptions().containsKey("properties.bootstrap.cluster")) {
@@ -150,6 +191,9 @@ public class KafkaCatalog extends AbstractCatalog {
 
     @Override
     public boolean tableExists(ObjectPath objectPath) throws CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to check existence of table metadata for " + objectPath);
+        }
         if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
             return true;
         }
@@ -159,24 +203,36 @@ public class KafkaCatalog extends AbstractCatalog {
 
     @Override
     public void dropTable(ObjectPath objectPath, boolean b) throws TableNotExistException, CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to drop table metadata for " + objectPath);
+        }
         LOG.info("drop table: {}, {}", objectPath, b);
         delegate.dropTable(objectPath, b);
     }
 
     @Override
     public void renameTable(ObjectPath objectPath, String s, boolean b) throws TableNotExistException, TableAlreadyExistException, CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to rename table metadata for " + objectPath);
+        }
         LOG.info("rename table: {}, {}, {}", objectPath, s, b);
         delegate.renameTable(objectPath, s, b);
     }
 
     @Override
     public void createTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean b) throws TableAlreadyExistException, DatabaseNotExistException, CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to create table metadata for " + objectPath);
+        }
         LOG.info("create table: {}, {}, {}", objectPath, catalogBaseTable, b);
         delegate.createTable(objectPath, catalogBaseTable, b);
     }
 
     @Override
     public void alterTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean b) throws TableNotExistException, CatalogException {
+        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+            throw new CatalogException("user " + user + " isn't permitted to alter table metadata for " + objectPath);
+        }
         LOG.info("alter table: {}, {}, {}", objectPath, catalogBaseTable, b);
         delegate.alterTable(objectPath, catalogBaseTable, b);
     }
