@@ -115,47 +115,47 @@ public class KafkaCatalog extends AbstractCatalog {
     }
 
     @Override
-    public CatalogDatabase getDatabase(String s) throws DatabaseNotExistException, CatalogException {
-        LOG.info("get database {}", s);
-        return delegate.getDatabase(s);
+    public CatalogDatabase getDatabase(String name) throws DatabaseNotExistException, CatalogException {
+        LOG.info("get database {}", name);
+        return delegate.getDatabase(name);
     }
 
     @Override
-    public boolean databaseExists(String s) throws CatalogException {
-        LOG.info("database exists {}", s);
-        return delegate.databaseExists(s);
+    public boolean databaseExists(String name) throws CatalogException {
+        LOG.info("database exists {}", name);
+        return delegate.databaseExists(name);
     }
 
     @Override
-    public void createDatabase(String s, CatalogDatabase catalogDatabase, boolean b) throws DatabaseAlreadyExistException, CatalogException {
-        LOG.info("create database {}", s);
-        delegate.createDatabase(s, catalogDatabase, b);
+    public void createDatabase(String name, CatalogDatabase catalogDatabase, boolean ignoreIfExists) throws DatabaseAlreadyExistException, CatalogException {
+        LOG.info("create database {}", name);
+        delegate.createDatabase(name, catalogDatabase, ignoreIfExists);
     }
 
     @Override
-    public void dropDatabase(String s, boolean b, boolean b1) throws DatabaseNotExistException, DatabaseNotEmptyException, CatalogException {
-        LOG.info("drop database {}", s);
-        delegate.dropDatabase(s, b, b1);
+    public void dropDatabase(String name, boolean ignoreIfNotExists, boolean cascade) throws DatabaseNotExistException, DatabaseNotEmptyException, CatalogException {
+        LOG.info("drop database {}", name);
+        delegate.dropDatabase(name, ignoreIfNotExists, cascade);
     }
 
     @Override
-    public void alterDatabase(String s, CatalogDatabase catalogDatabase, boolean b) throws DatabaseNotExistException, CatalogException {
-        LOG.info("alter database {}", s);
-        delegate.alterDatabase(s, catalogDatabase, b);
+    public void alterDatabase(String name, CatalogDatabase catalogDatabase, boolean ignoreIfNotExists) throws DatabaseNotExistException, CatalogException {
+        LOG.info("alter database {}", name);
+        delegate.alterDatabase(name, catalogDatabase, ignoreIfNotExists);
     }
 
     @Override
-    public List<String> listTables(String s) throws DatabaseNotExistException, CatalogException {
-        LOG.info("list tables {}", s);
-        List<String> allTables = delegate.listTables(s);
+    public List<String> listTables(String databaseName) throws DatabaseNotExistException, CatalogException {
+        LOG.info("list tables {}", databaseName);
+        List<String> allTables = delegate.listTables(databaseName);
         Stream<String> stream = Stream.concat(allTables.stream(), tables.keySet().stream());
         return stream.filter(table -> userPermittedTables.get(user).contains(table)).toList();
     }
 
     @Override
-    public List<String> listViews(String s) throws DatabaseNotExistException, CatalogException {
-        LOG.info("list views {}", s);
-        return delegate.listViews(s);
+    public List<String> listViews(String databaseName) throws DatabaseNotExistException, CatalogException {
+        LOG.info("list views {}", databaseName);
+        return delegate.listViews(databaseName);
     }
 
     @Override
@@ -204,39 +204,39 @@ public class KafkaCatalog extends AbstractCatalog {
     }
 
     @Override
-    public void dropTable(ObjectPath objectPath, boolean b) throws TableNotExistException, CatalogException {
+    public void dropTable(ObjectPath objectPath, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException {
         if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
             throw new CatalogException("user " + user + " isn't permitted to drop table metadata for " + objectPath);
         }
-        LOG.info("drop table: {}, {}", objectPath, b);
-        delegate.dropTable(objectPath, b);
+        LOG.info("drop table: {}, {}", objectPath, ignoreIfNotExists);
+        delegate.dropTable(objectPath, ignoreIfNotExists);
     }
 
     @Override
-    public void renameTable(ObjectPath objectPath, String s, boolean b) throws TableNotExistException, TableAlreadyExistException, CatalogException {
+    public void renameTable(ObjectPath objectPath, String s, boolean ignoreIfNotExists) throws TableNotExistException, TableAlreadyExistException, CatalogException {
         if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
             throw new CatalogException("user " + user + " isn't permitted to rename table metadata for " + objectPath);
         }
-        LOG.info("rename table: {}, {}, {}", objectPath, s, b);
-        delegate.renameTable(objectPath, s, b);
+        LOG.info("rename table: {}, {}, {}", objectPath, s, ignoreIfNotExists);
+        delegate.renameTable(objectPath, s, ignoreIfNotExists);
     }
 
     @Override
-    public void createTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean b) throws TableAlreadyExistException, DatabaseNotExistException, CatalogException {
+    public void createTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean ignoreIfExists) throws TableAlreadyExistException, DatabaseNotExistException, CatalogException {
         if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
             throw new CatalogException("user " + user + " isn't permitted to create table metadata for " + objectPath);
         }
-        LOG.info("create table: {}, {}, {}", objectPath, catalogBaseTable, b);
-        delegate.createTable(objectPath, catalogBaseTable, b);
+        LOG.info("create table: {}, {}, {}", objectPath, catalogBaseTable, ignoreIfExists);
+        delegate.createTable(objectPath, catalogBaseTable, ignoreIfExists);
     }
 
     @Override
-    public void alterTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean b) throws TableNotExistException, CatalogException {
+    public void alterTable(ObjectPath objectPath, CatalogBaseTable catalogBaseTable, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException {
         if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
             throw new CatalogException("user " + user + " isn't permitted to alter table metadata for " + objectPath);
         }
-        LOG.info("alter table: {}, {}, {}", objectPath, catalogBaseTable, b);
-        delegate.alterTable(objectPath, catalogBaseTable, b);
+        LOG.info("alter table: {}, {}, {}", objectPath, catalogBaseTable, ignoreIfNotExists);
+        delegate.alterTable(objectPath, catalogBaseTable, ignoreIfNotExists);
     }
 
     @Override
@@ -252,9 +252,9 @@ public class KafkaCatalog extends AbstractCatalog {
     }
 
     @Override
-    public List<CatalogPartitionSpec> listPartitionsByFilter(ObjectPath objectPath, List<Expression> list) throws TableNotExistException, TableNotPartitionedException, CatalogException {
-        LOG.info("list partitions by filter: {}, {}", objectPath, list);
-        return delegate.listPartitionsByFilter(objectPath, list);
+    public List<CatalogPartitionSpec> listPartitionsByFilter(ObjectPath objectPath, List<Expression> filters) throws TableNotExistException, TableNotPartitionedException, CatalogException {
+        LOG.info("list partitions by filter: {}, {}", objectPath, filters);
+        return delegate.listPartitionsByFilter(objectPath, filters);
     }
 
     @Override
@@ -270,9 +270,9 @@ public class KafkaCatalog extends AbstractCatalog {
     }
 
     @Override
-    public void createPartition(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogPartition catalogPartition, boolean b) throws TableNotExistException, TableNotPartitionedException, PartitionSpecInvalidException, PartitionAlreadyExistsException, CatalogException {
+    public void createPartition(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogPartition catalogPartition, boolean ignoreIfExists) throws TableNotExistException, TableNotPartitionedException, PartitionSpecInvalidException, PartitionAlreadyExistsException, CatalogException {
         LOG.info("create partition: {}, {}", objectPath, catalogPartitionSpec);
-        delegate.createPartition(objectPath, catalogPartitionSpec, catalogPartition, b);
+        delegate.createPartition(objectPath, catalogPartitionSpec, catalogPartition, ignoreIfExists);
     }
 
     @Override
@@ -282,85 +282,92 @@ public class KafkaCatalog extends AbstractCatalog {
     }
 
     @Override
-    public void alterPartition(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogPartition catalogPartition, boolean b) throws PartitionNotExistException, CatalogException {
+    public void alterPartition(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogPartition catalogPartition, boolean ignoreIfNotExists) throws PartitionNotExistException, CatalogException {
         LOG.info("alter partition: {}, {}", objectPath, catalogPartitionSpec);
-
+        delegate.alterPartition(objectPath, catalogPartitionSpec, catalogPartition, ignoreIfNotExists);
     }
 
     @Override
     public List<String> listFunctions(String s) throws DatabaseNotExistException, CatalogException {
         LOG.info("list functions: {}", s);
-        return List.of();
+        return delegate.listFunctions(s);
     }
 
     @Override
     public CatalogFunction getFunction(ObjectPath objectPath) throws FunctionNotExistException, CatalogException {
         LOG.info("get function: {}", objectPath);
-        return null;
+        return delegate.getFunction(objectPath);
     }
 
     @Override
     public boolean functionExists(ObjectPath objectPath) throws CatalogException {
         LOG.info("function exists: {}", objectPath);
-        return false;
+        return delegate.functionExists(objectPath);
     }
 
     @Override
-    public void createFunction(ObjectPath objectPath, CatalogFunction catalogFunction, boolean b) throws FunctionAlreadyExistException, DatabaseNotExistException, CatalogException {
+    public void createFunction(ObjectPath objectPath, CatalogFunction catalogFunction, boolean ignoreIfExists) throws FunctionAlreadyExistException, DatabaseNotExistException, CatalogException {
         LOG.info("create function: {}", objectPath);
+        delegate.createFunction(objectPath, catalogFunction, ignoreIfExists);
     }
 
     @Override
-    public void alterFunction(ObjectPath objectPath, CatalogFunction catalogFunction, boolean b) throws FunctionNotExistException, CatalogException {
+    public void alterFunction(ObjectPath objectPath, CatalogFunction catalogFunction, boolean ignoreIfNotExists) throws FunctionNotExistException, CatalogException {
         LOG.info("alter function: {}", objectPath);
+        delegate.alterFunction(objectPath, catalogFunction, ignoreIfNotExists);
     }
 
     @Override
-    public void dropFunction(ObjectPath objectPath, boolean b) throws FunctionNotExistException, CatalogException {
+    public void dropFunction(ObjectPath objectPath, boolean ignoreIfNotExists) throws FunctionNotExistException, CatalogException {
         LOG.info("drop function: {}", objectPath);
+        delegate.dropFunction(objectPath, ignoreIfNotExists);
     }
 
     @Override
     public CatalogTableStatistics getTableStatistics(ObjectPath objectPath) throws TableNotExistException, CatalogException {
         LOG.info("get table statistics: {}", objectPath);
-        return null;
+        return delegate.getTableStatistics(objectPath);
     }
 
     @Override
     public CatalogColumnStatistics getTableColumnStatistics(ObjectPath objectPath) throws TableNotExistException, CatalogException {
         LOG.info("get table column statistics: {}", objectPath);
-        return null;
+        return delegate.getTableColumnStatistics(objectPath);
     }
 
     @Override
     public CatalogTableStatistics getPartitionStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec) throws PartitionNotExistException, CatalogException {
         LOG.info("get partition statistics: {}", objectPath);
-        return null;
+        return delegate.getPartitionStatistics(objectPath, catalogPartitionSpec);
     }
 
     @Override
     public CatalogColumnStatistics getPartitionColumnStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec) throws PartitionNotExistException, CatalogException {
         LOG.info("get partition column statistics: {}", objectPath);
-        return null;
+        return delegate.getPartitionColumnStatistics(objectPath, catalogPartitionSpec);
     }
 
     @Override
-    public void alterTableStatistics(ObjectPath objectPath, CatalogTableStatistics catalogTableStatistics, boolean b) throws TableNotExistException, CatalogException {
+    public void alterTableStatistics(ObjectPath objectPath, CatalogTableStatistics catalogTableStatistics, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException {
         LOG.info("alter table statistics: {}", objectPath);
+        delegate.alterTableStatistics(objectPath, catalogTableStatistics, ignoreIfNotExists);
     }
 
     @Override
-    public void alterTableColumnStatistics(ObjectPath objectPath, CatalogColumnStatistics catalogColumnStatistics, boolean b) throws TableNotExistException, CatalogException, TablePartitionedException {
+    public void alterTableColumnStatistics(ObjectPath objectPath, CatalogColumnStatistics catalogColumnStatistics, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException, TablePartitionedException {
         LOG.info("alter table column statistics: {}", objectPath);
+        delegate.alterTableColumnStatistics(objectPath, catalogColumnStatistics, ignoreIfNotExists);
     }
 
     @Override
-    public void alterPartitionStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogTableStatistics catalogTableStatistics, boolean b) throws PartitionNotExistException, CatalogException {
+    public void alterPartitionStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogTableStatistics catalogTableStatistics, boolean ignoreIfNotExists) throws PartitionNotExistException, CatalogException {
         LOG.info("alter partition statistics: {}", objectPath);
+        delegate.alterPartitionStatistics(objectPath, catalogPartitionSpec, catalogTableStatistics, ignoreIfNotExists);
     }
 
     @Override
-    public void alterPartitionColumnStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogColumnStatistics catalogColumnStatistics, boolean b) throws PartitionNotExistException, CatalogException {
+    public void alterPartitionColumnStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogColumnStatistics catalogColumnStatistics, boolean ignoreIfNotExists) throws PartitionNotExistException, CatalogException {
         LOG.info("alter partition column statistics: {}", objectPath);
+        delegate.alterPartitionColumnStatistics(objectPath, catalogPartitionSpec, catalogColumnStatistics, ignoreIfNotExists);
     }
 }
