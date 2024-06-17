@@ -160,9 +160,14 @@ public class KafkaCatalog extends AbstractCatalog {
 
     @Override
     public CatalogBaseTable getTable(ObjectPath objectPath) throws TableNotExistException, CatalogException {
-        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
+        CatalogBaseTable catalogBaseTable = doGetTable(objectPath);
+        if(catalogBaseTable != null && !userPermittedTables.get(user).contains(objectPath.getObjectName())) {
             throw new CatalogException("user " + user + " isn't permitted to get table metadata for " + objectPath);
         }
+        return catalogBaseTable;
+    }
+
+    private CatalogBaseTable doGetTable(ObjectPath objectPath) throws TableNotExistException {
         LOG.info("get table {}", objectPath);
         if (objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
             LOG.info("returning the olde custom table!");
@@ -191,10 +196,7 @@ public class KafkaCatalog extends AbstractCatalog {
 
     @Override
     public boolean tableExists(ObjectPath objectPath) throws CatalogException {
-        if(!userPermittedTables.get(user).contains(objectPath.getObjectName())) {
-            throw new CatalogException("user " + user + " isn't permitted to check existence of table metadata for " + objectPath);
-        }
-        if (objectPath.getDatabaseName().equals("default") && objectPath.getObjectName().equals("KafkaTable")) {
+        if (objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
             return true;
         }
         LOG.info("table exists: {}", objectPath);
