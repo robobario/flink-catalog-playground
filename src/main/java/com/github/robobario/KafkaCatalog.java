@@ -326,48 +326,72 @@ public class KafkaCatalog extends AbstractCatalog {
     @Override
     public CatalogTableStatistics getTableStatistics(ObjectPath objectPath) throws TableNotExistException, CatalogException {
         LOG.info("get table statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return null;
+        }
         return delegate.getTableStatistics(objectPath);
     }
 
     @Override
     public CatalogColumnStatistics getTableColumnStatistics(ObjectPath objectPath) throws TableNotExistException, CatalogException {
         LOG.info("get table column statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return null;
+        }
         return delegate.getTableColumnStatistics(objectPath);
     }
 
     @Override
     public CatalogTableStatistics getPartitionStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec) throws PartitionNotExistException, CatalogException {
         LOG.info("get partition statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return null;
+        }
         return delegate.getPartitionStatistics(objectPath, catalogPartitionSpec);
     }
 
     @Override
     public CatalogColumnStatistics getPartitionColumnStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec) throws PartitionNotExistException, CatalogException {
         LOG.info("get partition column statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return null;
+        }
         return delegate.getPartitionColumnStatistics(objectPath, catalogPartitionSpec);
     }
 
     @Override
     public void alterTableStatistics(ObjectPath objectPath, CatalogTableStatistics catalogTableStatistics, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException {
         LOG.info("alter table statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return;
+        }
         delegate.alterTableStatistics(objectPath, catalogTableStatistics, ignoreIfNotExists);
     }
 
     @Override
     public void alterTableColumnStatistics(ObjectPath objectPath, CatalogColumnStatistics catalogColumnStatistics, boolean ignoreIfNotExists) throws TableNotExistException, CatalogException, TablePartitionedException {
         LOG.info("alter table column statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return;
+        }
         delegate.alterTableColumnStatistics(objectPath, catalogColumnStatistics, ignoreIfNotExists);
     }
 
     @Override
     public void alterPartitionStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogTableStatistics catalogTableStatistics, boolean ignoreIfNotExists) throws PartitionNotExistException, CatalogException {
         LOG.info("alter partition statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return;
+        }
         delegate.alterPartitionStatistics(objectPath, catalogPartitionSpec, catalogTableStatistics, ignoreIfNotExists);
     }
 
     @Override
     public void alterPartitionColumnStatistics(ObjectPath objectPath, CatalogPartitionSpec catalogPartitionSpec, CatalogColumnStatistics catalogColumnStatistics, boolean ignoreIfNotExists) throws PartitionNotExistException, CatalogException {
         LOG.info("alter partition column statistics: {}", objectPath);
+        if(objectPath.getDatabaseName().equals("default") && tables.containsKey(objectPath.getObjectName())) {
+            return;
+        }
         delegate.alterPartitionColumnStatistics(objectPath, catalogPartitionSpec, catalogColumnStatistics, ignoreIfNotExists);
     }
 }
